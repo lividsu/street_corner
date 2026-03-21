@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Street Corner</title>
+<style>
+  :root {
+    --bg:      #0d0d0f;
+    --surface: #16161a;
+    --card:    #1e1e24;
+    --border:  #2a2a34;
+    --accent:  #7c5cbf;
+    --accent2: #5b8dee;
+    --text:    #e8e8f0;
+    --muted:   #7a7a92;
+    --success: #4caf7d;
+    --error:   #e05c6a;
+    --radius:  14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+  header p { color: var(--muted); margin-top: 6px; font-size: .9rem; }
+  .header-top {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+  }
+  .lang-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: .78rem;
+    padding: 6px 10px;
+    font-family: inherit;
+  }
+
+  /* ── Layout ── */
+  .container { width: 100%; max-width: 860px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+  }
+  .card-title {
+    font-size: .8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* ── Upload row ── */
+  .upload-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: #7c5cbf14;
+  }
+  .drop-zone.filled { border-color: var(--success); border-style: solid; }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-icon { font-size: 2rem; line-height: 1; }
+  .drop-label { font-size: .8rem; color: var(--muted); }
+  .drop-name {
+    font-size: .78rem;
+    color: var(--success);
+    word-break: break-all;
+    max-width: 100%;
+    padding: 0 4px;
+  }
+  .img-preview {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: none;
+    margin-top: 4px;
+  }
+
+  /* ── Meta row ── */
+  .meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 480px) { .meta-row { grid-template-columns: 1fr; } }
+
+  .field label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
+  .field input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 9px 12px;
+    font-size: .9rem;
+    transition: border-color .2s;
+    font-family: inherit;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+
+  /* ── Lyrics area ── */
+  .lyrics-wrap { position: relative; }
+  .lyrics-wrap textarea {
+    width: 100%;
+    min-height: 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 12px;
+    font-size: .85rem;
+    resize: vertical;
+    line-height: 1.7;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    transition: border-color .2s;
+  }
+  .lyrics-wrap textarea:focus { outline: none; border-color: var(--accent); }
+  .lyrics-hint {
+    font-size: .72rem;
+    color: var(--muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .lrc-badge {
+    display: none;
+    background: var(--accent);
+    color: white;
+    font-size: .65rem;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .lyrics-file-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: .72rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .lyrics-file-btn:hover { border-color: var(--accent); color: var(--text); }
+  
+  .lyrics-align-btn {
+    position: absolute;
+    top: 10px;
+    right: 100px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--accent);
+    font-size: .72rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  .lyrics-align-btn:hover { border-color: var(--accent); background: #7c5cbf22; }
+  .lyrics-align-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #lyricsFileInput { display: none; }
+
+  /* ── Options row ── */
+  .options-row { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+
+  .opt-group { display: flex; flex-direction: column; gap: 8px; }
+  .opt-group label.section-label { font-size: .78rem; color: var(--muted); }
+
+  .toggle-group { display: flex; gap: 8px; }
+  .toggle-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: .85rem;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.2;
+  }
+  .toggle-btn .icon { font-size: 1.3rem; }
+  .toggle-btn .sub { font-size: .65rem; color: var(--muted); }
+  .toggle-btn.active {
+    background: #7c5cbf22;
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .toggle-btn.active .sub { color: var(--accent); }
+
+  /* ── Generate btn ── */
+  .btn-generate {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    font-family: inherit;
+  }
+  .btn-generate:hover { opacity: .9; }
+  .btn-generate:active { transform: scale(.99); }
+  .btn-generate:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* ── Progress ── */
+  .progress-card { display: none; }
+  .progress-card.visible { display: block; }
+  .progress-bar-wrap {
+    background: var(--surface);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width .4s ease;
+    width: 0%;
+  }
+  .progress-msg { font-size: .85rem; color: var(--muted); margin-top: 8px; min-height: 20px; }
+  .progress-dots::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+  @keyframes dots {
+    0%   { content: ''; }
+    33%  { content: '.'; }
+    66%  { content: '..'; }
+    100% { content: '...'; }
+  }
+
+  /* ── Error ── */
+  .error-box {
+    background: #e05c6a18;
+    border: 1px solid var(--error);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: .82rem;
+    color: var(--error);
+    margin-top: 10px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  /* ── Download ── */
+  .download-card { display: none; }
+  .download-card.visible { display: block; }
+  .btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity .2s;
+    font-family: inherit;
+  }
+  .btn-download:hover { opacity: .88; }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <select id="langSelect" class="lang-select">
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+    </select>
+  </div>
+  <h1>Street Corner</h1>
+  <p id="subtitleText">A simple and practical music video generator.</p>
+</header>
+
+<div class="container">
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-title" id="uploadTitle">Upload Files</div>
+    <div class="upload-row">
+
+      <!-- Audio -->
+      <div class="drop-zone" id="audioDrop">
+        <input type="file" id="audioInput" accept="audio/*" />
+        <div class="drop-icon">🎵</div>
+        <div class="drop-label" id="audioLabel">Audio File<br><span style="font-size:.7rem">MP3 / WAV / FLAC / AAC</span></div>
+        <div class="drop-name" id="audioName"></div>
+      </div>
+
+      <!-- Image -->
+      <div class="drop-zone" id="imageDrop">
+        <input type="file" id="imageInput" accept="image/*" />
+        <div class="drop-icon">🖼️</div>
+        <div class="drop-label" id="imageLabel">Cover Image<br><span style="font-size:.7rem">JPG / PNG / WEBP</span></div>
+        <div class="drop-name" id="imageName"></div>
+        <img class="img-preview" id="imgPreview" alt="preview" />
+      </div>
+
+      <!-- Lyrics file shortcut -->
+      <div class="drop-zone" id="lyricsDrop" style="cursor:pointer">
+        <div class="drop-icon">📝</div>
+        <div class="drop-label" id="lyricsFileLabel">Lyrics File (Optional)<br><span style="font-size:.7rem">LRC / TXT, or paste below</span></div>
+        <div class="drop-name" id="lyricsFileName"></div>
+        <input type="file" id="lyricsFileInput2" accept=".lrc,.txt,text/*" />
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Song info -->
+  <div class="card">
+    <div class="card-title" id="songInfoTitle">Song Info (Optional, shown in video)</div>
+    <div class="meta-row">
+      <div class="field">
+        <label id="songTitleLabel">Song Title</label>
+        <input type="text" id="songTitle" placeholder="e.g. Nocturne" />
+      </div>
+      <div class="field">
+        <label id="artistLabel">Artist</label>
+        <input type="text" id="artist" placeholder="e.g. Jay Chou" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Lyrics -->
+  <div class="card">
+    <div class="card-title" id="lyricsTitle">Lyrics</div>
+    <div class="lyrics-wrap">
+      <button class="lyrics-align-btn" id="btnAlign" onclick="alignLyrics()">✨ Auto Align / Generate</button>
+      <button class="lyrics-file-btn" id="lyricsImportBtn" onclick="document.getElementById('lyricsFileInput').click()">📂 Import File</button>
+      <input type="file" id="lyricsFileInput" accept=".lrc,.txt,text/*" />
+      <textarea id="lyricsText" placeholder="Paste lyrics. Supports LRC (with timestamps) or plain text (auto distributed).
+
+Plain text example:
+Sparrows outside the window
+Chattering on the power lines
+
+LRC example:
+[00:12.34]Sparrows outside the window
+[00:14.56]Chattering on the power lines"></textarea>
+    </div>
+    <div class="lyrics-hint">
+      <span id="lrcBadge" class="lrc-badge">LRC</span>
+      <span id="lyricsHintText">Detected LRC timestamps. Subtitles will sync precisely.</span>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="card">
+    <div class="card-title" id="videoSettingsTitle">Video Settings</div>
+    <div class="options-row">
+
+      <div class="opt-group">
+        <label class="section-label" id="videoFormatLabel">Video Format</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-mode="landscape" onclick="selectMode('landscape', this)">
+            <span class="icon">🖥️</span>
+            <span id="landscapeText">Landscape</span>
+            <span class="sub">1920 × 1080</span>
+          </button>
+          <button class="toggle-btn" data-mode="portrait" onclick="selectMode('portrait', this)">
+            <span class="icon">📱</span>
+            <span id="portraitText">Portrait</span>
+            <span class="sub">1080 × 1920</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="opt-group">
+        <label class="section-label" id="bgStyleLabel">Background Style</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" data-bg="fill" onclick="selectBg('fill', this)">
+            <span class="icon">⬛</span>
+            <span id="fillText">Fill Crop</span>
+            <span class="sub" id="fillSubText">Cover image fills frame</span>
+          </button>
+          <button class="toggle-btn active" data-bg="blur" onclick="selectBg('blur', this)">
+            <span class="icon">🎨</span>
+            <span id="blurText">Mood Blur</span>
+            <span class="sub" id="blurSubText">Color + blur + rhythm</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Generate -->
+  <button class="btn-generate" id="btnGenerate" onclick="generate()">
+    🎬 &nbsp; Generate Video
+  </button>
+
+  <!-- Progress -->
+  <div class="card progress-card" id="progressCard">
+    <div class="card-title" style="margin-bottom:0">
+      <span id="progressTitle">Processing</span>
+      <span id="progressPct" style="float:right;color:var(--accent)">0%</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-msg" id="progressMsg"><span class="progress-dots"></span></div>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- Download -->
+  <div class="card download-card" id="downloadCard">
+    <div class="card-title" id="downloadTitle">✅ Video Generated</div>
+    <a class="btn-download" id="downloadLink" href="#" download="music_video.mp4">
+      <span id="downloadBtnText">⬇️ &nbsp; Download Video</span>
+    </a>
+  </div>
+
+</div><!-- /container -->
+
+<input type="file" id="lyricsFileInput" accept=".lrc,.txt,text/*" style="display:none" />
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let selectedMode = "landscape";
+let selectedBg   = "blur";
+let pollTimer    = null;
+let currentLocale = "en";
+
+const I18N = {
+  en: {
+    subtitleText: "A simple and practical music video generator.",
+    uploadTitle: "Upload Files",
+    audioLabel: "Audio File<br><span style=\"font-size:.7rem\">MP3 / WAV / FLAC / AAC</span>",
+    imageLabel: "Cover Image<br><span style=\"font-size:.7rem\">JPG / PNG / WEBP</span>",
+    lyricsFileLabel: "Lyrics File (Optional)<br><span style=\"font-size:.7rem\">LRC / TXT, or paste below</span>",
+    songInfoTitle: "Song Info (Optional, shown in video)",
+    songTitleLabel: "Song Title",
+    songTitlePlaceholder: "e.g. Nocturne",
+    artistLabel: "Artist",
+    artistPlaceholder: "e.g. Jay Chou",
+    lyricsTitle: "Lyrics",
+    alignBtn: "✨ Auto Align / Generate",
+    alignBtnLoading: "⏳ Processing...",
+    lyricsImportBtn: "📂 Import File",
+    lyricsPlaceholder: `Paste lyrics. Supports LRC (with timestamps) or plain text (auto distributed).
+
+Plain text example:
+Sparrows outside the window
+Chattering on the power lines
+
+LRC example:
+[00:12.34]Sparrows outside the window
+[00:14.56]Chattering on the power lines`,
+    lrcDetected: "Detected LRC timestamps. Subtitles will sync precisely.",
+    plainDetected: "Plain text detected. Lyrics will be distributed evenly.",
+    videoSettingsTitle: "Video Settings",
+    videoFormatLabel: "Video Format",
+    landscapeText: "Landscape",
+    portraitText: "Portrait",
+    bgStyleLabel: "Background Style",
+    fillText: "Fill Crop",
+    fillSubText: "Cover image fills frame",
+    blurText: "Mood Blur",
+    blurSubText: "Color + blur + rhythm",
+    generateBtn: "🎬 &nbsp; Generate Video",
+    processingTitle: "Processing",
+    downloadTitle: "✅ Video Generated",
+    downloadBtnText: "⬇️ &nbsp; Download Video",
+    needAudioForAlign: "Please upload an audio file before aligning or generating.",
+    alignFailed: "Align failed",
+    networkError: "Network error: ",
+    needAudio: "Please upload an audio file",
+    needImage: "Please upload a cover image",
+    uploading: "Uploading files...",
+    serverError: "Server error",
+    completed: "Completed!",
+    doneTitle: "✅ Done",
+    unknownError: "Unknown error",
+    errorTitle: "❌ Error",
+    errorHint: "Please check the error details below"
+  },
+  zh: {
+    subtitleText: "一个简单好用的音乐视频生成工具。",
+    uploadTitle: "上传文件",
+    audioLabel: "音频文件<br><span style=\"font-size:.7rem\">MP3 / WAV / FLAC / AAC</span>",
+    imageLabel: "封面图片<br><span style=\"font-size:.7rem\">JPG / PNG / WEBP</span>",
+    lyricsFileLabel: "歌词文件（可选）<br><span style=\"font-size:.7rem\">LRC / TXT，或在下方粘贴</span>",
+    songInfoTitle: "歌曲信息（可选，将显示在视频中）",
+    songTitleLabel: "歌曲名称",
+    songTitlePlaceholder: "例：夜曲",
+    artistLabel: "艺术家",
+    artistPlaceholder: "例：周杰伦",
+    lyricsTitle: "歌词",
+    alignBtn: "✨ 自动对齐 / 生成",
+    alignBtnLoading: "⏳ 处理中...",
+    lyricsImportBtn: "📂 导入文件",
+    lyricsPlaceholder: `粘贴歌词，支持 LRC 格式（带时间轴）或普通文本（自动均分）
+
+普通文本示例：
+窗外的麻雀
+在电线杆上多嘴
+
+LRC 格式示例：
+[00:12.34]窗外的麻雀
+[00:14.56]在电线杆上多嘴`,
+    lrcDetected: "已检测到 LRC 时间轴，将精确同步字幕",
+    plainDetected: "普通文本：歌词将按时间均匀分布",
+    videoSettingsTitle: "视频设置",
+    videoFormatLabel: "视频格式",
+    landscapeText: "横版",
+    portraitText: "竖版",
+    bgStyleLabel: "背景样式",
+    fillText: "填充裁切",
+    fillSubText: "图片铺满",
+    blurText: "律动氛围",
+    blurSubText: "取色 + 模糊 + 节奏",
+    generateBtn: "🎬 &nbsp; 生成视频",
+    processingTitle: "处理中",
+    downloadTitle: "✅ 视频已生成",
+    downloadBtnText: "⬇️ &nbsp; 下载视频",
+    needAudioForAlign: "请先上传音频文件，以便进行对齐或生成。",
+    alignFailed: "对齐失败",
+    networkError: "网络错误：",
+    needAudio: "请上传音频文件",
+    needImage: "请上传封面图片",
+    uploading: "上传文件…",
+    serverError: "服务器错误",
+    completed: "生成完成！",
+    doneTitle: "✅ 完成",
+    unknownError: "未知错误",
+    errorTitle: "❌ 出错了",
+    errorHint: "请检查下方错误信息"
+  }
+};
+
+function t(key) {
+  return (I18N[currentLocale] && I18N[currentLocale][key]) || I18N.en[key] || key;
+}
+
+function applyI18n() {
+  document.documentElement.lang = currentLocale === "zh" ? "zh-CN" : "en";
+  document.getElementById("subtitleText").textContent = t("subtitleText");
+  document.getElementById("uploadTitle").textContent = t("uploadTitle");
+  document.getElementById("audioLabel").innerHTML = t("audioLabel");
+  document.getElementById("imageLabel").innerHTML = t("imageLabel");
+  document.getElementById("lyricsFileLabel").innerHTML = t("lyricsFileLabel");
+  document.getElementById("songInfoTitle").textContent = t("songInfoTitle");
+  document.getElementById("songTitleLabel").textContent = t("songTitleLabel");
+  document.getElementById("songTitle").placeholder = t("songTitlePlaceholder");
+  document.getElementById("artistLabel").textContent = t("artistLabel");
+  document.getElementById("artist").placeholder = t("artistPlaceholder");
+  document.getElementById("lyricsTitle").textContent = t("lyricsTitle");
+  document.getElementById("lyricsImportBtn").textContent = t("lyricsImportBtn");
+  document.getElementById("lyricsText").placeholder = t("lyricsPlaceholder");
+  document.getElementById("videoSettingsTitle").textContent = t("videoSettingsTitle");
+  document.getElementById("videoFormatLabel").textContent = t("videoFormatLabel");
+  document.getElementById("landscapeText").textContent = t("landscapeText");
+  document.getElementById("portraitText").textContent = t("portraitText");
+  document.getElementById("bgStyleLabel").textContent = t("bgStyleLabel");
+  document.getElementById("fillText").textContent = t("fillText");
+  document.getElementById("fillSubText").textContent = t("fillSubText");
+  document.getElementById("blurText").textContent = t("blurText");
+  document.getElementById("blurSubText").textContent = t("blurSubText");
+  document.getElementById("btnGenerate").innerHTML = t("generateBtn");
+  document.getElementById("downloadTitle").textContent = t("downloadTitle");
+  document.getElementById("downloadBtnText").innerHTML = t("downloadBtnText");
+  if (!document.getElementById("btnAlign").disabled) {
+    document.getElementById("btnAlign").textContent = t("alignBtn");
+  }
+  checkLrc();
+}
+
+// ── Mode / BG selectors ────────────────────────────────────────────────────
+function selectMode(mode, btn) {
+  selectedMode = mode;
+  document.querySelectorAll("[data-mode]").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+function selectBg(bg, btn) {
+  selectedBg = bg;
+  document.querySelectorAll("[data-bg]").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+// ── File input: audio ──────────────────────────────────────────────────────
+document.getElementById("audioInput").addEventListener("change", function () {
+  const f = this.files[0];
+  if (!f) return;
+  document.getElementById("audioName").textContent = f.name;
+  document.getElementById("audioDrop").classList.add("filled");
+});
+
+// ── File input: image ──────────────────────────────────────────────────────
+document.getElementById("imageInput").addEventListener("change", function () {
+  const f = this.files[0];
+  if (!f) return;
+  document.getElementById("imageName").textContent = f.name;
+  document.getElementById("imageDrop").classList.add("filled");
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById("imgPreview");
+    img.src = e.target.result;
+    img.style.display = "block";
+  };
+  reader.readAsDataURL(f);
+});
+
+// ── Lyrics file import ────────────────────────────────────────────────────
+function setupLyricsInput(inputId) {
+  document.getElementById(inputId).addEventListener("change", function () {
+    const f = this.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById("lyricsText").value = e.target.result;
+      checkLrc();
+    };
+    reader.readAsText(f, "utf-8");
+  });
+}
+setupLyricsInput("lyricsFileInput");
+
+// Lyrics file drop zone
+document.getElementById("lyricsFileInput2").addEventListener("change", function () {
+  const f = this.files[0];
+  if (!f) return;
+  document.getElementById("lyricsFileName").textContent = f.name;
+  document.getElementById("lyricsDrop").classList.add("filled");
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById("lyricsText").value = e.target.result;
+    checkLrc();
+  };
+  reader.readAsText(f, "utf-8");
+});
+
+// ── Drag-and-drop ─────────────────────────────────────────────────────────
+function setupDragDrop(dropId, inputId) {
+  const zone = document.getElementById(dropId);
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag-over"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.classList.remove("drag-over");
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      const inp = document.getElementById(inputId);
+      // Use DataTransfer to assign files
+      const dt = new DataTransfer();
+      dt.items.add(files[0]);
+      inp.files = dt.files;
+      inp.dispatchEvent(new Event("change"));
+    }
+  });
+}
+setupDragDrop("audioDrop", "audioInput");
+setupDragDrop("imageDrop", "imageInput");
+setupDragDrop("lyricsDrop", "lyricsFileInput2");
+
+document.getElementById("langSelect").addEventListener("change", function () {
+  currentLocale = this.value === "zh" ? "zh" : "en";
+  applyI18n();
+});
+applyI18n();
+
+// ── LRC detection ─────────────────────────────────────────────────────────
+document.getElementById("lyricsText").addEventListener("input", checkLrc);
+function checkLrc() {
+  const text = document.getElementById("lyricsText").value;
+  const badge = document.getElementById("lrcBadge");
+  const hint  = document.getElementById("lyricsHintText");
+  if (/\[\d+:\d+[.:]\d+\]/.test(text)) {
+    badge.style.display = "inline";
+    hint.textContent = t("lrcDetected");
+  } else {
+    badge.style.display = "none";
+    hint.textContent = t("plainDetected");
+  }
+}
+
+// ── Auto Align Lyrics ──────────────────────────────────────────────────────
+async function alignLyrics() {
+  const audioInput = document.getElementById("audioInput");
+  if (!audioInput.files.length) {
+    alert(t("needAudioForAlign"));
+    return;
+  }
+
+  const btn = document.getElementById("btnAlign");
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = t("alignBtnLoading");
+
+  const fd = new FormData();
+  fd.append("audio", audioInput.files[0]);
+  fd.append("lyrics", document.getElementById("lyricsText").value);
+  fd.append("locale", currentLocale);
+
+  try {
+    const resp = await fetch("/align_lyrics", { method: "POST", body: fd });
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      alert(data.error || t("alignFailed"));
+    } else if (data.lrc) {
+      document.getElementById("lyricsText").value = data.lrc;
+      checkLrc();
+    }
+  } catch (e) {
+    alert(t("networkError") + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+// ── Generate ───────────────────────────────────────────────────────────────
+async function generate() {
+  const audioInput = document.getElementById("audioInput");
+  const imageInput = document.getElementById("imageInput");
+
+  if (!audioInput.files.length) { alert(t("needAudio")); return; }
+  if (!imageInput.files.length) { alert(t("needImage")); return; }
+
+  const btn = document.getElementById("btnGenerate");
+  btn.disabled = true;
+
+  // Reset UI
+  document.getElementById("progressCard").classList.add("visible");
+  document.getElementById("downloadCard").classList.remove("visible");
+  document.getElementById("errorBox").style.display = "none";
+  setProgress(5, t("uploading"));
+
+  const fd = new FormData();
+  fd.append("audio",      audioInput.files[0]);
+  fd.append("image",      imageInput.files[0]);
+  fd.append("lyrics",     document.getElementById("lyricsText").value);
+  fd.append("mode",       selectedMode);
+  fd.append("bg_mode",    selectedBg);
+  fd.append("song_title", document.getElementById("songTitle").value);
+  fd.append("artist",     document.getElementById("artist").value);
+  fd.append("locale",     currentLocale);
+
+  let resp;
+  try {
+    resp = await fetch("/generate", { method: "POST", body: fd });
+  } catch (e) {
+    showError(t("networkError") + e.message);
+    btn.disabled = false;
+    return;
+  }
+
+  const data = await resp.json();
+  if (!resp.ok || data.error) {
+    showError(data.error || t("serverError"));
+    btn.disabled = false;
+    return;
+  }
+
+  pollStatus(data.job_id, btn);
+}
+
+function pollStatus(jobId, btn) {
+  pollTimer = setInterval(async () => {
+    let data;
+    try {
+      const r = await fetch("/status/" + jobId);
+      data = await r.json();
+    } catch { return; }
+
+    const prog = data.progress || 0;
+    setProgress(prog, data.msg || "");
+
+    if (data.status === "done") {
+      clearInterval(pollTimer);
+      setProgress(100, t("completed"));
+      document.getElementById("progressTitle").textContent = t("doneTitle");
+      document.getElementById("downloadLink").href = "/download/" + jobId;
+      document.getElementById("downloadCard").classList.add("visible");
+      btn.disabled = false;
+    } else if (data.status === "error") {
+      clearInterval(pollTimer);
+      showError((data.detail || data.msg || t("unknownError")));
+      btn.disabled = false;
+    }
+  }, 1200);
+}
+
+function setProgress(pct, msg) {
+  document.getElementById("progressBar").style.width = pct + "%";
+  document.getElementById("progressPct").textContent = pct + "%";
+  if (msg) document.getElementById("progressMsg").innerHTML =
+    `<span class="progress-dots"></span> ${msg}`;
+}
+
+function showError(msg) {
+  const box = document.getElementById("errorBox");
+  box.style.display = "block";
+  box.textContent = msg;
+  document.getElementById("progressTitle").textContent = t("errorTitle");
+  document.getElementById("progressMsg").textContent = t("errorHint");
+}
+</script>
+</body>
+</html>

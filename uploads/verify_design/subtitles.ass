@@ -1,0 +1,23 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Microsoft YaHei,48,&H00FFFFFF,&H000000FF,&H00000000,&HA0000000,0,0,0,0,100,100,2,0,1,2,0,8,20,20,96,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b1\fs48\c&HFFFFFF&\alpha&H00&}第1句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第2句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第3句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第4句歌词
+Dialogue: 0,0:00:02.00,0:00:03.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs43\c&HFFFFFF&\alpha&H45&}第1句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第2句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第3句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第4句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第5句歌词
+Dialogue: 0,0:00:03.00,0:00:04.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs40\c&HFFFFFF&\alpha&H78&}第1句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第2句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第3句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第4句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第5句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第6句歌词
+Dialogue: 0,0:00:04.00,0:00:05.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第1句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第2句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第3句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第4句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第5句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第6句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第7句歌词
+Dialogue: 0,0:00:05.00,0:00:06.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第2句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第3句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第4句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第5句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第6句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第7句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第8句歌词
+Dialogue: 0,0:00:06.00,0:00:07.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第3句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第4句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第5句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第6句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第7句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第8句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第9句歌词
+Dialogue: 0,0:00:07.00,0:00:08.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第4句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第5句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第6句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第7句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第8句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第9句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第10句歌词
+Dialogue: 0,0:00:08.00,0:00:09.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第5句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第6句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第7句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第8句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第9句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第10句歌词\N{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第11句歌词
+Dialogue: 0,0:00:09.00,0:00:10.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第6句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第7句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第8句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第9句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第10句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第11句歌词
+Dialogue: 0,0:00:10.00,0:00:11.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第7句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第8句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第9句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第10句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第11句歌词
+Dialogue: 0,0:00:11.00,0:00:12.00,Default,,0,0,0,,{\an8\pos(540,1075)}{\b0\fs37\c&HFFFFFF&\alpha&H9A&}第8句歌词\N{\b0\fs40\c&HFFFFFF&\alpha&H78&}第9句歌词\N{\b0\fs43\c&HFFFFFF&\alpha&H45&}第10句歌词\N{\b1\fs48\c&HFFFFFF&\alpha&H00&}第11句歌词

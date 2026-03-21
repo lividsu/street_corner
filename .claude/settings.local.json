@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python3 -m pip install flask werkzeug -q)",
+      "Bash(python -m pip install flask werkzeug -q)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(/c/Users/livid/miniconda3/Scripts/pip install:*)",
+      "Read(//c/Users/livid/miniconda3/Scripts/**)",
+      "Read(//c/Users/livid/miniconda3/Scripts//**)",
+      "Bash(python -m pip install \"flask>=3.0.0\" \"werkzeug>=3.0.0\" --upgrade -q)",
+      "Bash(python -m pip install \"flask>=3.0.0\" \"werkzeug>=3.0.0\" --upgrade)"
+    ]
+  }
+}
