@@ -127,19 +127,19 @@ def get_layout(w: int, h: int) -> dict:
         lyric_x = w // 2
         title_x_expr = "(w-tw)/2"
         artist_x_expr = "(w-tw)/2"
-        font_size = 48
+        font_size = 64
     else:
         cover_box = int(h * 0.6)
         cover_x = int(w * 0.15)
         cover_y = (h - cover_box) // 2
         text_center_x = int(cover_x + cover_box + (w - (cover_x + cover_box)) / 2)
-        title_y = int(h * 0.35)
-        artist_y = title_y + int(h * 0.08)
-        lyric_top = artist_y + int(h * 0.12)
+        title_y = int(h * 0.25)
+        artist_y = title_y + int(h * 0.06)
+        lyric_top = artist_y + int(h * 0.10)
         lyric_x = text_center_x
         title_x_expr = f"{text_center_x}-(tw/2)"
         artist_x_expr = f"{text_center_x}-(tw/2)"
-        font_size = 42
+        font_size = 60
         
     return {
         "cover_box": cover_box,
@@ -187,32 +187,39 @@ def build_ass(
     full_rows = header_rows + [{"kind": "lyric", "text": lyr["text"]} for lyr in lyrics]
 
     events = []
+    is_portrait = h > w
+    context_lines = 6 if is_portrait else 5
+
     for i, lyr in enumerate(lyrics):
         start = lyr["time"]
         end = lyrics[i + 1]["time"] if i + 1 < len(lyrics) else duration
-        end = min(end, start + 8)
         if end <= start:
             continue
         current_idx = len(header_rows) + i
-        start_i = max(0, current_idx - 3)
-        end_i = min(len(full_rows), current_idx + 4)
+        start_i = max(0, current_idx - context_lines)
+        end_i = min(len(full_rows), current_idx + context_lines + 1)
         rows = []
         for j in range(start_i, end_i):
             item = full_rows[j]
             dist = abs(j - current_idx)
             txt = esc_ass(item["text"])
+            
             if dist == 0:
-                scale = 1.0
-                alpha = "00"
+                scale, alpha = 1.0, "00"
             elif dist == 1:
-                scale = 0.9
-                alpha = "45"
+                scale, alpha = 0.9, "45"
             elif dist == 2:
-                scale = 0.84
-                alpha = "78"
+                scale, alpha = 0.8, "78"
+            elif dist == 3:
+                scale, alpha = 0.7, "9A"
+            elif dist == 4:
+                scale, alpha = 0.6, "B4"
+            elif dist == 5:
+                scale, alpha = 0.5, "CC"
+            elif dist == 6:
+                scale, alpha = 0.4, "E0"
             else:
-                scale = 0.78
-                alpha = "9A"
+                scale, alpha = 0.4, "F0"
 
             if item["kind"] == "title":
                 base_size = int(font_size * 1.05)
@@ -247,7 +254,7 @@ def build_ass(
     )
 
 
-def build_vf(w: int, h: int, has_lyrics: bool, bg_mode: str, layout: dict) -> tuple[str, str, bool]:
+def build_vf(w: int, h: int, has_lyrics: bool, bg_mode: str, layout: dict, ass_name: str = "subtitles.ass") -> tuple[str, str, bool]:
     if bg_mode == "blur":
         scale_bg = f"scale={w}:{h}:force_original_aspect_ratio=increase"
         crop_bg = f"crop={w}:{h}"
@@ -264,7 +271,7 @@ def build_vf(w: int, h: int, has_lyrics: bool, bg_mode: str, layout: dict) -> tu
             f"[bg][cover]overlay=x={cover_x}:y={cover_y}[comp]"
         )
         if has_lyrics:
-            vf += ";[comp]ass=subtitles.ass[v0]"
+            vf += f";[comp]ass={ass_name}[v0]"
             return vf, "v0", True
         return vf, "comp", True
     else:
@@ -273,7 +280,7 @@ def build_vf(w: int, h: int, has_lyrics: bool, bg_mode: str, layout: dict) -> tu
             f"crop={w}:{h}"
         )
         if has_lyrics:
-            vf += ",ass=subtitles.ass"
+            vf += f",ass={ass_name}"
         return vf, "", False
 
 
@@ -288,8 +295,10 @@ def run_ffmpeg(
     song_title: str,
     artist: str,
     layout: dict,
+    out_name: str = "output.mp4",
+    ass_name: str = "subtitles.ass"
 ) -> tuple[bool, str]:
-    vf, label, is_complex = build_vf(w, h, has_lyrics, bg_mode, layout)
+    vf, label, is_complex = build_vf(w, h, has_lyrics, bg_mode, layout, ass_name)
 
     def esc_drawtext(text: str) -> str:
         return (
@@ -304,7 +313,7 @@ def run_ffmpeg(
         safe = esc_drawtext(song_title)
         title_y = layout["title_y"]
         title_x = layout["title_x_expr"]
-        fontsize = int(h * 0.048) if h > w else int(h * 0.06)
+        fontsize = int(layout["font_size"] * 1.05)
         drawtext_filters.append(
             f"drawtext=fontfile='C\\:/Windows/Fonts/msyhbd.ttc':"
             f"text='{safe}':fontsize={fontsize}:fontcolor=white:"
@@ -314,7 +323,7 @@ def run_ffmpeg(
         safe = esc_drawtext(artist)
         artist_y = layout["artist_y"]
         artist_x = layout["artist_x_expr"]
-        fontsize = int(h * 0.03) if h > w else int(h * 0.04)
+        fontsize = int(layout["font_size"] * 0.82)
         drawtext_filters.append(
             f"drawtext=fontfile='C\\:/Windows/Fonts/msyh.ttc':"
             f"text='{safe}':fontsize={fontsize}:fontcolor=white@0.84:"
@@ -349,7 +358,7 @@ def run_ffmpeg(
         "-shortest",
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart",
-        "output.mp4",
+        out_name,
     ]
 
     result = subprocess.run(
@@ -370,7 +379,7 @@ def generate_worker(job_id: str, session_dir: str, params: dict):
         audio_name = params["audio_name"]
         image_name = params["image_name"]
         lyrics_text = params["lyrics_text"]
-        mode = params["mode"]
+        modes = params.get("mode", "landscape").split(",")
         bg_mode = params["bg_mode"]
         song_title = params["song_title"]
         artist = params["artist"]
@@ -380,24 +389,31 @@ def generate_worker(job_id: str, session_dir: str, params: dict):
         jobs[job_id] = {"status": "processing", "progress": 30, "msg": tr(locale, "processing_lyrics")}
 
         has_lyrics = bool(lyrics_text.strip())
-        w, h = (1080, 1920) if mode == "portrait" else (1920, 1080)
-        layout = get_layout(w, h)
+        
+        generated_files = []
+        for i, mode in enumerate(modes):
+            w, h = (1080, 1920) if mode == "portrait" else (1920, 1080)
+            layout = get_layout(w, h)
+            
+            ass_name = f"subtitles_{mode}.ass"
+            if has_lyrics:
+                lyrics = parse_lrc(lyrics_text) if is_lrc(lyrics_text) else parse_plain(lyrics_text, duration)
+                ass = build_ass(lyrics, duration, w, h, layout, song_title, artist)
+                with open(os.path.join(session_dir, ass_name), "w", encoding="utf-8") as f:
+                    f.write(ass)
 
-        if has_lyrics:
-            lyrics = parse_lrc(lyrics_text) if is_lrc(lyrics_text) else parse_plain(lyrics_text, duration)
-            ass = build_ass(lyrics, duration, w, h, layout, song_title, artist)
-            with open(os.path.join(session_dir, "subtitles.ass"), "w", encoding="utf-8") as f:
-                f.write(ass)
+            progress_base = 30 + int(i / len(modes) * 60)
+            jobs[job_id] = {"status": "processing", "progress": progress_base, "msg": tr(locale, "rendering_video") + f" ({mode})"}
 
-        jobs[job_id] = {"status": "processing", "progress": 50, "msg": tr(locale, "rendering_video")}
+            out_name = f"output_{mode}.mp4"
+            ok, stderr = run_ffmpeg(session_dir, audio_name, image_name, w, h, has_lyrics, bg_mode, song_title, artist, layout, out_name, ass_name)
 
-        ok, stderr = run_ffmpeg(session_dir, audio_name, image_name, w, h, has_lyrics, bg_mode, song_title, artist, layout)
+            if not ok:
+                jobs[job_id] = {"status": "error", "msg": tr(locale, "ffmpeg_error"), "detail": stderr}
+                return
+            generated_files.append(out_name)
 
-        if not ok:
-            jobs[job_id] = {"status": "error", "msg": tr(locale, "ffmpeg_error"), "detail": stderr}
-            return
-
-        jobs[job_id] = {"status": "done", "progress": 100, "msg": tr(locale, "done")}
+        jobs[job_id] = {"status": "done", "progress": 100, "msg": tr(locale, "done"), "files": generated_files}
 
     except Exception as exc:
         jobs[job_id] = {"status": "error", "msg": str(exc)}
@@ -531,11 +547,15 @@ def status(job_id: str):
     return jsonify(job)
 
 
-@app.route("/download/<job_id>")
-def download(job_id: str):
-    path = os.path.join(UPLOAD_FOLDER, job_id, "output.mp4")
+@app.route("/download/<job_id>/<filename>")
+def download(job_id: str, filename: str):
+    # Only allow downloading output_landscape.mp4 or output_portrait.mp4
+    if filename not in ("output_landscape.mp4", "output_portrait.mp4"):
+        return tr("en", "file_not_found"), 404
+        
+    path = os.path.join(UPLOAD_FOLDER, job_id, filename)
     if os.path.exists(path):
-        return send_file(path, as_attachment=True, download_name="music_video.mp4")
+        return send_file(path, as_attachment=True, download_name=filename)
     return tr("en", "file_not_found"), 404
 
 

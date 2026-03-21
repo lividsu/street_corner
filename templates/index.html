@@ -477,9 +477,6 @@ LRC example:
   <!-- Download -->
   <div class="card download-card" id="downloadCard">
     <div class="card-title" id="downloadTitle">✅ Video Generated</div>
-    <a class="btn-download" id="downloadLink" href="#" download="music_video.mp4">
-      <span id="downloadBtnText">⬇️ &nbsp; Download Video</span>
-    </a>
   </div>
 
 </div><!-- /container -->
@@ -488,7 +485,7 @@ LRC example:
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
-let selectedMode = "landscape";
+let selectedModes = new Set(["landscape"]);
 let selectedBg   = "blur";
 let pollTimer    = null;
 let currentLocale = "en";
@@ -538,6 +535,7 @@ LRC example:
     networkError: "Network error: ",
     needAudio: "Please upload an audio file",
     needImage: "Please upload a cover image",
+    needMode: "Please select at least one video format",
     uploading: "Uploading files...",
     serverError: "Server error",
     completed: "Completed!",
@@ -590,6 +588,7 @@ LRC 格式示例：
     networkError: "网络错误：",
     needAudio: "请上传音频文件",
     needImage: "请上传封面图片",
+    needMode: "请至少选择一种视频格式",
     uploading: "上传文件…",
     serverError: "服务器错误",
     completed: "生成完成！",
@@ -630,7 +629,18 @@ function applyI18n() {
   document.getElementById("blurSubText").textContent = t("blurSubText");
   document.getElementById("btnGenerate").innerHTML = t("generateBtn");
   document.getElementById("downloadTitle").textContent = t("downloadTitle");
-  document.getElementById("downloadBtnText").innerHTML = t("downloadBtnText");
+  
+  // Update dynamically created download buttons if they exist
+  document.querySelectorAll('.btn-download').forEach(el => {
+    let baseText = t("downloadBtnText");
+    if (el.download.includes('landscape') && document.querySelectorAll('.btn-download').length > 1) {
+      baseText += ` (${t('landscapeText')})`;
+    } else if (el.download.includes('portrait') && document.querySelectorAll('.btn-download').length > 1) {
+      baseText += ` (${t('portraitText')})`;
+    }
+    el.innerHTML = baseText;
+  });
+
   if (!document.getElementById("btnAlign").disabled) {
     document.getElementById("btnAlign").textContent = t("alignBtn");
   }
@@ -639,9 +649,14 @@ function applyI18n() {
 
 // ── Mode / BG selectors ────────────────────────────────────────────────────
 function selectMode(mode, btn) {
-  selectedMode = mode;
-  document.querySelectorAll("[data-mode]").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
+  if (selectedModes.has(mode)) {
+    if (selectedModes.size === 1) return; // Prevent deselecting the last one
+    selectedModes.delete(mode);
+    btn.classList.remove("active");
+  } else {
+    selectedModes.add(mode);
+    btn.classList.add("active");
+  }
 }
 function selectBg(bg, btn) {
   selectedBg = bg;
@@ -787,6 +802,7 @@ async function generate() {
 
   if (!audioInput.files.length) { alert(t("needAudio")); return; }
   if (!imageInput.files.length) { alert(t("needImage")); return; }
+  if (selectedModes.size === 0) { alert(t("needMode") || "Please select at least one video format."); return; }
 
   const btn = document.getElementById("btnGenerate");
   btn.disabled = true;
@@ -801,7 +817,7 @@ async function generate() {
   fd.append("audio",      audioInput.files[0]);
   fd.append("image",      imageInput.files[0]);
   fd.append("lyrics",     document.getElementById("lyricsText").value);
-  fd.append("mode",       selectedMode);
+  fd.append("mode",       Array.from(selectedModes).join(","));
   fd.append("bg_mode",    selectedBg);
   fd.append("song_title", document.getElementById("songTitle").value);
   fd.append("artist",     document.getElementById("artist").value);
@@ -841,8 +857,30 @@ function pollStatus(jobId, btn) {
       clearInterval(pollTimer);
       setProgress(100, t("completed"));
       document.getElementById("progressTitle").textContent = t("doneTitle");
-      document.getElementById("downloadLink").href = "/download/" + jobId;
-      document.getElementById("downloadCard").classList.add("visible");
+      
+      const files = data.files || ["output_landscape.mp4"];
+      const downloadCard = document.getElementById("downloadCard");
+      downloadCard.classList.add("visible");
+      
+      // Clear old buttons except the card title
+      Array.from(downloadCard.querySelectorAll('.btn-download')).forEach(el => el.remove());
+      
+      files.forEach((file, idx) => {
+        const link = document.createElement("a");
+        link.className = "btn-download";
+        link.style.marginRight = "10px";
+        link.style.marginBottom = "10px";
+        link.href = "/download/" + jobId + "/" + file;
+        link.download = file;
+        link.innerHTML = t("downloadBtnText") + (files.length > 1 ? ` (${file.includes('landscape') ? t('landscapeText') : t('portraitText')})` : "");
+        downloadCard.appendChild(link);
+        
+        // Auto download
+        setTimeout(() => {
+          link.click();
+        }, idx * 1000); // Stagger downloads slightly
+      });
+      
       btn.disabled = false;
     } else if (data.status === "error") {
       clearInterval(pollTimer);
