@@ -8,6 +8,7 @@ import threading
 import subprocess
 from collections import Counter
 import difflib
+import unicodedata
 
 from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
@@ -169,6 +170,11 @@ def build_ass(
     font = "Microsoft YaHei"
     lyric_top = layout["lyric_top"]
     lyric_x = layout["lyric_x"]
+    side_margin = int(w * 0.03)
+    max_row_width = max(
+        int(w * 0.3),
+        int(2 * min(max(0, lyric_x - side_margin), max(0, w - lyric_x - side_margin)))
+    )
 
     def fmt(s: float) -> str:
         hh = int(s // 3600)
@@ -178,6 +184,31 @@ def build_ass(
 
     def esc_ass(t: str) -> str:
         return t.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
+
+    def char_units(ch: str) -> int:
+        return 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+
+    def wrap_ass_text(text: str, row_font_size: int) -> str:
+        max_units = max(10, int(max_row_width / max(1.0, row_font_size * 0.52)))
+        chunks = []
+        for part in text.splitlines() or [""]:
+            if not part:
+                chunks.append("")
+                continue
+            current = []
+            used = 0
+            for ch in part:
+                u = char_units(ch)
+                if current and used + u > max_units:
+                    chunks.append("".join(current))
+                    current = [ch]
+                    used = u
+                else:
+                    current.append(ch)
+                    used += u
+            if current:
+                chunks.append("".join(current))
+        return "\\N".join(esc_ass(x) for x in chunks)
 
     header_rows = []
     if song_title.strip():
@@ -202,8 +233,6 @@ def build_ass(
         for j in range(start_i, end_i):
             item = full_rows[j]
             dist = abs(j - current_idx)
-            txt = esc_ass(item["text"])
-            
             if dist == 0:
                 scale, alpha = 1.0, "00"
             elif dist == 1:
@@ -231,6 +260,7 @@ def build_ass(
                 base_size = font_size
                 bold = 1 if dist == 0 else 0
 
+            txt = wrap_ass_text(item["text"], int(base_size * scale))
             style = f"{{\\b{bold}\\fs{int(base_size * scale)}\\c&HFFFFFF&\\alpha&H{alpha}&}}"
             rows.append(style + txt)
         block = f"{{\\an8\\pos({lyric_x},{lyric_top})}}" + "\\N".join(rows)
