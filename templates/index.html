@@ -259,6 +259,26 @@
   .btn-generate:hover { opacity: .9; }
   .btn-generate:active { transform: scale(.99); }
   .btn-generate:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  .generate-options {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: -6px;
+    margin-bottom: -8px;
+  }
+  .generate-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .82rem;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .generate-check input {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
 
   /* ── Progress ── */
   .progress-card { display: none; }
@@ -457,6 +477,12 @@ LRC example:
   </div>
 
   <!-- Generate -->
+  <div class="generate-options">
+    <label class="generate-check">
+      <input type="checkbox" id="autoAlignBeforeGenerate" checked />
+      <span id="autoAlignBeforeGenerateText">Auto align lyrics before generating</span>
+    </label>
+  </div>
   <button class="btn-generate" id="btnGenerate" onclick="generate()">
     🎬 &nbsp; Generate Video
   </button>
@@ -527,6 +553,7 @@ LRC example:
     blurText: "Mood Blur",
     blurSubText: "Color + blur + rhythm",
     generateBtn: "🎬 &nbsp; Generate Video",
+    autoAlignBeforeGenerateText: "Auto align lyrics before generating",
     processingTitle: "Processing",
     downloadTitle: "✅ Video Generated",
     downloadBtnText: "⬇️ &nbsp; Download Video",
@@ -536,6 +563,7 @@ LRC example:
     needAudio: "Please upload an audio file",
     needImage: "Please upload a cover image",
     needMode: "Please select at least one video format",
+    autoAligning: "Auto aligning lyrics...",
     uploading: "Uploading files...",
     serverError: "Server error",
     completed: "Completed!",
@@ -580,6 +608,7 @@ LRC 格式示例：
     blurText: "律动氛围",
     blurSubText: "取色 + 模糊 + 节奏",
     generateBtn: "🎬 &nbsp; 生成视频",
+    autoAlignBeforeGenerateText: "生成前自动对齐歌词",
     processingTitle: "处理中",
     downloadTitle: "✅ 视频已生成",
     downloadBtnText: "⬇️ &nbsp; 下载视频",
@@ -589,6 +618,7 @@ LRC 格式示例：
     needAudio: "请上传音频文件",
     needImage: "请上传封面图片",
     needMode: "请至少选择一种视频格式",
+    autoAligning: "正在自动对齐歌词…",
     uploading: "上传文件…",
     serverError: "服务器错误",
     completed: "生成完成！",
@@ -628,6 +658,7 @@ function applyI18n() {
   document.getElementById("blurText").textContent = t("blurText");
   document.getElementById("blurSubText").textContent = t("blurSubText");
   document.getElementById("btnGenerate").innerHTML = t("generateBtn");
+  document.getElementById("autoAlignBeforeGenerateText").textContent = t("autoAlignBeforeGenerateText");
   document.getElementById("downloadTitle").textContent = t("downloadTitle");
   
   // Update dynamically created download buttons if they exist
@@ -665,11 +696,34 @@ function selectBg(bg, btn) {
 }
 
 // ── File input: audio ──────────────────────────────────────────────────────
-document.getElementById("audioInput").addEventListener("change", function () {
+function filenameWithoutExt(name) {
+  const idx = name.lastIndexOf(".");
+  return idx > 0 ? name.slice(0, idx) : name;
+}
+
+async function fetchAudioMetadata(file) {
+  const fd = new FormData();
+  fd.append("audio", file);
+  fd.append("locale", currentLocale);
+  const resp = await fetch("/audio_metadata", { method: "POST", body: fd });
+  if (!resp.ok) return null;
+  const data = await resp.json();
+  return data || null;
+}
+
+document.getElementById("audioInput").addEventListener("change", async function () {
   const f = this.files[0];
   if (!f) return;
   document.getElementById("audioName").textContent = f.name;
   document.getElementById("audioDrop").classList.add("filled");
+  document.getElementById("songTitle").value = filenameWithoutExt(f.name).trim();
+
+  try {
+    const meta = await fetchAudioMetadata(f);
+    if (meta && typeof meta.artist === "string") {
+      document.getElementById("artist").value = meta.artist.trim();
+    }
+  } catch {}
 });
 
 // ── File input: image ──────────────────────────────────────────────────────
@@ -761,11 +815,29 @@ function checkLrc() {
 }
 
 // ── Auto Align Lyrics ──────────────────────────────────────────────────────
-async function alignLyrics() {
+function buildAlignFormData() {
+  const fd = new FormData();
+  fd.append("audio", document.getElementById("audioInput").files[0]);
+  fd.append("lyrics", document.getElementById("lyricsText").value);
+  fd.append("locale", currentLocale);
+  return fd;
+}
+
+async function requestAlignedLyrics() {
+  const resp = await fetch("/align_lyrics", { method: "POST", body: buildAlignFormData() });
+  const data = await resp.json();
+  if (!resp.ok || data.error) throw new Error(data.error || t("alignFailed"));
+  if (!data.lrc) throw new Error(t("alignFailed"));
+  return data.lrc;
+}
+
+async function alignLyrics(options = {}) {
+  const silent = !!options.silent;
   const audioInput = document.getElementById("audioInput");
   if (!audioInput.files.length) {
-    alert(t("needAudioForAlign"));
-    return;
+    const errMsg = t("needAudioForAlign");
+    if (!silent) alert(errMsg);
+    return { ok: false, error: errMsg };
   }
 
   const btn = document.getElementById("btnAlign");
@@ -773,22 +845,15 @@ async function alignLyrics() {
   btn.disabled = true;
   btn.textContent = t("alignBtnLoading");
 
-  const fd = new FormData();
-  fd.append("audio", audioInput.files[0]);
-  fd.append("lyrics", document.getElementById("lyricsText").value);
-  fd.append("locale", currentLocale);
-
   try {
-    const resp = await fetch("/align_lyrics", { method: "POST", body: fd });
-    const data = await resp.json();
-    if (!resp.ok || data.error) {
-      alert(data.error || t("alignFailed"));
-    } else if (data.lrc) {
-      document.getElementById("lyricsText").value = data.lrc;
-      checkLrc();
-    }
+    const lrc = await requestAlignedLyrics();
+    document.getElementById("lyricsText").value = lrc;
+    checkLrc();
+    return { ok: true };
   } catch (e) {
-    alert(t("networkError") + e.message);
+    const errMsg = e.message || t("alignFailed");
+    if (!silent) alert(errMsg);
+    return { ok: false, error: errMsg };
   } finally {
     btn.disabled = false;
     btn.textContent = origText;
@@ -811,6 +876,18 @@ async function generate() {
   document.getElementById("progressCard").classList.add("visible");
   document.getElementById("downloadCard").classList.remove("visible");
   document.getElementById("errorBox").style.display = "none";
+  setProgress(3, "");
+
+  if (document.getElementById("autoAlignBeforeGenerate").checked) {
+    setProgress(4, t("autoAligning"));
+    const alignResult = await alignLyrics({ silent: true });
+    if (!alignResult.ok) {
+      showError(alignResult.error || t("alignFailed"));
+      btn.disabled = false;
+      return;
+    }
+  }
+
   setProgress(5, t("uploading"));
 
   const fd = new FormData();

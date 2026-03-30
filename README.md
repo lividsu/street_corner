@@ -100,7 +100,14 @@ curl -X POST "http://127.0.0.1:5004/align_lyrics" \
 
 ## Project Structure
 
-- `app.py` - Backend entry and core logic
+- `app.py` - Backend entry and route layer
+- `settings.py` - Centralized runtime configuration
+- `i18n.py` - Locale normalization and message lookup
+- `job_store.py` - Thread-safe job status store
+- `lyrics.py` - Lyric parsing, alignment tokenization, ASS building
+- `media.py` - FFprobe metadata and FFmpeg rendering helpers
+- `aligner.py` - Whisper transcription and lyric alignment flow
+- `generator.py` - Background generation worker orchestration
 - `templates/index.html` - Frontend page
 - `requirements.txt` - Python dependencies
 - `run.bat` - Windows startup script
@@ -110,4 +117,4 @@ curl -X POST "http://127.0.0.1:5004/align_lyrics" \
 
 - Max request size is 500 MB.
 - Video rendering depends on local FFmpeg availability.
-- If lyric text is not rendered correctly, adjust font settings in `app.py`.
+- If lyric text is not rendered correctly, adjust font settings in `lyrics.py` and `media.py`.
